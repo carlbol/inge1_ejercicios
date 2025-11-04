@@ -340,18 +340,18 @@ test02AccountATransferToAccountBAndAccountBBalanceIsUpdated
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:34:43'!
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 13:05:13'!
 test05AccountWith0TransactionsHasAccountSummaryWithABalanceOfZero
 
 	| account |
 	account := ReceptiveAccount new.
 	
-	self assert: account accountSummary equals: (OrderedCollection with: 'Balance = 0')
+	self assert: account accountSummaryReport equals: (OrderedCollection with: 'Balance = 0')
 	
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:35:36'!
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 13:05:13'!
 test06AccountWithDepositAndWithdrawHasCorrespondingStringsAccountSummary
 
 	| account |
@@ -359,12 +359,12 @@ test06AccountWithDepositAndWithdrawHasCorrespondingStringsAccountSummary
 	Deposit register: 100 on: account.
 	Withdraw register: 50 on: account.
 	
-	self assert: account accountSummary equals: (OrderedCollection with: 'Depósito por 100.' with: 'Extracción por 50.' with: 'Balance = 50').
+	self assert: account accountSummaryReport equals: (OrderedCollection with: 'Depósito por 100.' with: 'Extracción por 50.' with: 'Balance = 50').
 	
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:36:14'!
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 13:05:13'!
 test07AccountThatSentATransferHasCorrespondingStringInAccountSummary
 
 	| transferringAccount transferredAccount |
@@ -373,12 +373,12 @@ test07AccountThatSentATransferHasCorrespondingStringInAccountSummary
 	Transfer from: transferringAccount  to: transferredAccount of: 100.
 	
 	
-	self assert: transferringAccount accountSummary equals: (OrderedCollection with: 'Salida por transferencia de 100.' with: 'Balance = -100').
+	self assert: transferringAccount accountSummaryReport equals: (OrderedCollection with: 'Salida por transferencia de 100.' with: 'Balance = -100').
 	
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:51:34'!
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 13:05:13'!
 test08AccountThatReceivedATransferHasCorrespondingStringInAccountSummary
 
 	| transferringAccount transferredAccount |
@@ -387,7 +387,22 @@ test08AccountThatReceivedATransferHasCorrespondingStringInAccountSummary
 	Transfer from: transferringAccount  to: transferredAccount of: 100.
 	
 	
-	self assert: transferredAccount accountSummary equals: (OrderedCollection with: 'Entrada por transferencia de 100.' with: 'Balance = 100').
+	self assert: transferredAccount accountSummaryReport equals: (OrderedCollection with: 'Entrada por transferencia de 100.' with: 'Balance = 100').
+	
+	
+	! !
+
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 13:06:18'!
+test09AccountThatHasReceivedAndSentTransfersProducesExpectedNetTransferReport
+
+	| accountA accountB |
+	accountA := ReceptiveAccount new.
+	accountB  := ReceptiveAccount new.
+	Transfer from: accountB  to: accountA of: 50.
+	Transfer from: accountA  to: accountB of: 25.
+	
+	
+	self assert: accountA netTransferReport equals: 25.
 	
 	
 	! !
@@ -430,6 +445,23 @@ test0xnavigation
 	transferringAccount transfers: 100 to: transferredAccount.
 	
 	self assert: transferredAccount balance equals: 100.
+	
+	
+	! !
+
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 13:12:49'!
+test10AccountWithNonTransferTransactionsThatHasReceivedSentTransfersProducesExpectedNetTransferReport
+
+	| accountA accountB |
+	accountA := ReceptiveAccount new.
+	accountB  := ReceptiveAccount new.
+	Transfer from: accountB  to: accountA of: 50.
+	Transfer from: accountA  to: accountB of: 25.
+	Deposit register: 100 on: accountA.
+	Withdraw register: 45 on: accountB.
+	
+	
+	self assert: accountA netTransferReport equals: 25.
 	
 	
 	! !
@@ -689,13 +721,17 @@ transfers: anAmountOfMoney to: transferredAccount
 	^Transfer from: self to: transferredAccount of: anAmountOfMoney.! !
 
 
-!ReceptiveAccount methodsFor: 'reports' stamp: 'CB 11/4/2025 12:32:57'!
-accountSummary
+!ReceptiveAccount methodsFor: 'reports' stamp: 'CB 11/4/2025 13:05:13'!
+accountSummaryReport
 	|accountSummary balanceSummary |
 	accountSummary := transactions collect: [:aTransaction | aTransaction transactionSummary].
 	balanceSummary := 'Balance = ', self balance asString.
 	accountSummary add:balanceSummary.
 	^ accountSummary! !
+
+!ReceptiveAccount methodsFor: 'reports' stamp: 'CB 11/4/2025 13:08:24'!
+netTransferReport
+	^ transactions sum: [:aTransaction | aTransaction transferValue].! !
 
 
 !classDefinition: #AccountTransaction category: 'Portfolio2'!
@@ -715,6 +751,17 @@ value
 affectBalance: aBalance
 
 	self subclassResponsibility ! !
+
+
+!AccountTransaction methodsFor: 'reports' stamp: 'CB 11/4/2025 13:02:40'!
+transactionSummary
+
+	self subclassResponsibility! !
+
+!AccountTransaction methodsFor: 'reports' stamp: 'CB 11/4/2025 13:10:40'!
+transferValue
+
+	^ 0.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -787,10 +834,6 @@ initializeBy: transferredAccount in: aTransfer
 	
 	transferredAccount register: self.! !
 
-!ReceivedTransfer methodsFor: 'initialization' stamp: 'CB 10/31/2025 21:25:09'!
-initializeFor: aValue 
-	value := aValue.! !
-
 
 !ReceivedTransfer methodsFor: 'updateBalance' stamp: 'CB 10/31/2025 21:50:46'!
 affectBalance: currentBalance 
@@ -800,6 +843,10 @@ affectBalance: currentBalance
 !ReceivedTransfer methodsFor: 'reports' stamp: 'CB 11/4/2025 12:53:26'!
 transactionSummary
 	^'Entrada por transferencia de ', transfer value asString , '.'! !
+
+!ReceivedTransfer methodsFor: 'reports' stamp: 'CB 11/4/2025 13:09:09'!
+transferValue
+	^ transfer receivedTransferValue.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -829,10 +876,6 @@ initializeBy: aTransferringAccount in: aTransfer
 	transfer := aTransfer.
 	aTransferringAccount register: self.! !
 
-!SentTransfer methodsFor: 'initialization' stamp: 'CB 10/31/2025 21:24:08'!
-initializeFor: aValue 
-	value := aValue.! !
-
 
 !SentTransfer methodsFor: 'balanceUpdate' stamp: 'CB 10/31/2025 21:49:07'!
 affectBalance: currentBalance 
@@ -842,6 +885,10 @@ affectBalance: currentBalance
 !SentTransfer methodsFor: 'reports' stamp: 'CB 11/4/2025 12:44:58'!
 transactionSummary
 	^'Salida por transferencia de ', transfer value asString , '.'! !
+
+!SentTransfer methodsFor: 'reports' stamp: 'CB 11/4/2025 13:09:47'!
+transferValue
+	^ transfer sentTransferValue ! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
