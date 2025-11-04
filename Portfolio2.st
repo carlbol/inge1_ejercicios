@@ -340,8 +340,32 @@ test02AccountATransferToAccountBAndAccountBBalanceIsUpdated
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 10/31/2025 22:04:31'!
-test03hasReg
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:04:25'!
+test0xAccountWith0TransactionsHasEmptyAccountSummary
+
+	| account |
+	account := ReceptiveAccount new.
+	
+	self assert: account accountSummary equals: OrderedCollection new
+	
+	
+	! !
+
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:17:04'!
+test0xAccountWithDepositAndWithdrawHasCorrespondingStringsAccountSummary
+
+	| account |
+	account := ReceptiveAccount new.
+	Deposit register: 100 on: account.
+	Withdraw register: 50 on: account.
+	
+	self assert: account accountSummary equals: (OrderedCollection with: 'Depósito por 100.' with: 'Extracción por 50.').
+	
+	
+	! !
+
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 11:59:13'!
+test0xaccountsReportsAccountSummaryAndNet
 
 	| transferringAccount transferredAccount |
 	transferringAccount := ReceptiveAccount new.
@@ -354,8 +378,8 @@ test03hasReg
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 10/31/2025 22:09:40'!
-test04navigation
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 11:58:55'!
+test0xhasReg
 
 	| transferringAccount transferredAccount |
 	transferringAccount := ReceptiveAccount new.
@@ -368,8 +392,8 @@ test04navigation
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 10/31/2025 22:13:34'!
-test05accountsReportsAccountSummaryAndNet
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 11:59:03'!
+test0xnavigation
 
 	| transferringAccount transferredAccount |
 	transferringAccount := ReceptiveAccount new.
@@ -636,6 +660,11 @@ transfers: anAmountOfMoney to: transferredAccount
 	
 	^Transfer from: self to: transferredAccount of: anAmountOfMoney.! !
 
+
+!ReceptiveAccount methodsFor: 'reports' stamp: 'CB 11/4/2025 12:11:00'!
+accountSummary
+	^ transactions collect: [:aTransaction | aTransaction transactionSummary].! !
+
 
 !classDefinition: #AccountTransaction category: 'Portfolio2'!
 Object subclass: #AccountTransaction
@@ -695,6 +724,11 @@ value
 affectBalance: aBalance
 
 	^aBalance + value ! !
+
+
+!Deposit methodsFor: 'reports' stamp: 'CB 11/4/2025 12:14:20'!
+transactionSummary
+		^ 'Depósito por ', value asString , '.'! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -807,6 +841,11 @@ value
 affectBalance: aBalance
 
 	^aBalance - value! !
+
+
+!Withdraw methodsFor: 'reports' stamp: 'CB 11/4/2025 12:16:02'!
+transactionSummary
+	^ 'Extracción por ', value asString , '.'! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
