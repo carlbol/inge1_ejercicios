@@ -378,15 +378,16 @@ test07AccountThatSentATransferHasCorrespondingStringInAccountSummary
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:21:58'!
-test0xAccountWithTransfersHasCorrespondingStringsInAccountSummary
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:51:34'!
+test08AccountThatReceivedATransferHasCorrespondingStringInAccountSummary
 
-	| account |
-	account := ReceptiveAccount new.
-	Deposit register: 100 on: account.
-	Withdraw register: 50 on: account.
+	| transferringAccount transferredAccount |
+	transferringAccount := ReceptiveAccount new.
+	transferredAccount  := ReceptiveAccount new.
+	Transfer from: transferringAccount  to: transferredAccount of: 100.
 	
-	self assert: account accountSummary equals: (OrderedCollection with: 'Depósito por 100.' with: 'Extracción por 50.').
+	
+	self assert: transferredAccount accountSummary equals: (OrderedCollection with: 'Entrada por transferencia de 100.' with: 'Balance = 100').
 	
 	
 	! !
@@ -775,7 +776,7 @@ for: aValue
 
 !classDefinition: #ReceivedTransfer category: 'Portfolio2'!
 AccountTransaction subclass: #ReceivedTransfer
-	instanceVariableNames: 'value transferredAccount_CHANGE_ME transfer'
+	instanceVariableNames: 'transfer'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Portfolio2'!
@@ -795,6 +796,11 @@ initializeFor: aValue
 affectBalance: currentBalance 
 	^ currentBalance + transfer receivedTransferValue.! !
 
+
+!ReceivedTransfer methodsFor: 'reports' stamp: 'CB 11/4/2025 12:53:26'!
+transactionSummary
+	^'Entrada por transferencia de ', transfer value asString , '.'! !
+
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 !classDefinition: 'ReceivedTransfer class' category: 'Portfolio2'!
@@ -813,7 +819,7 @@ for: aValue
 
 !classDefinition: #SentTransfer category: 'Portfolio2'!
 AccountTransaction subclass: #SentTransfer
-	instanceVariableNames: 'value transferringAccount1_CHANGE_ME transfer'
+	instanceVariableNames: 'transfer'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Portfolio2'!
