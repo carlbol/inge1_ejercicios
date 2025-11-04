@@ -340,19 +340,46 @@ test02AccountATransferToAccountBAndAccountBBalanceIsUpdated
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:04:25'!
-test0xAccountWith0TransactionsHasEmptyAccountSummary
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:34:43'!
+test05AccountWith0TransactionsHasAccountSummaryWithABalanceOfZero
 
 	| account |
 	account := ReceptiveAccount new.
 	
-	self assert: account accountSummary equals: OrderedCollection new
+	self assert: account accountSummary equals: (OrderedCollection with: 'Balance = 0')
 	
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:17:04'!
-test0xAccountWithDepositAndWithdrawHasCorrespondingStringsAccountSummary
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:35:36'!
+test06AccountWithDepositAndWithdrawHasCorrespondingStringsAccountSummary
+
+	| account |
+	account := ReceptiveAccount new.
+	Deposit register: 100 on: account.
+	Withdraw register: 50 on: account.
+	
+	self assert: account accountSummary equals: (OrderedCollection with: 'Depósito por 100.' with: 'Extracción por 50.' with: 'Balance = 50').
+	
+	
+	! !
+
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:36:14'!
+test07AccountThatSentATransferHasCorrespondingStringInAccountSummary
+
+	| transferringAccount transferredAccount |
+	transferringAccount := ReceptiveAccount new.
+	transferredAccount  := ReceptiveAccount new.
+	Transfer from: transferringAccount  to: transferredAccount of: 100.
+	
+	
+	self assert: transferringAccount accountSummary equals: (OrderedCollection with: 'Salida por transferencia de 100.' with: 'Balance = -100').
+	
+	
+	! !
+
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:21:58'!
+test0xAccountWithTransfersHasCorrespondingStringsInAccountSummary
 
 	| account |
 	account := ReceptiveAccount new.
@@ -661,9 +688,13 @@ transfers: anAmountOfMoney to: transferredAccount
 	^Transfer from: self to: transferredAccount of: anAmountOfMoney.! !
 
 
-!ReceptiveAccount methodsFor: 'reports' stamp: 'CB 11/4/2025 12:11:00'!
+!ReceptiveAccount methodsFor: 'reports' stamp: 'CB 11/4/2025 12:32:57'!
 accountSummary
-	^ transactions collect: [:aTransaction | aTransaction transactionSummary].! !
+	|accountSummary balanceSummary |
+	accountSummary := transactions collect: [:aTransaction | aTransaction transactionSummary].
+	balanceSummary := 'Balance = ', self balance asString.
+	accountSummary add:balanceSummary.
+	^ accountSummary! !
 
 
 !classDefinition: #AccountTransaction category: 'Portfolio2'!
@@ -801,6 +832,11 @@ initializeFor: aValue
 affectBalance: currentBalance 
 	^currentBalance + transfer sentTransferValue.! !
 
+
+!SentTransfer methodsFor: 'reports' stamp: 'CB 11/4/2025 12:44:58'!
+transactionSummary
+	^'Salida por transferencia de ', transfer value asString , '.'! !
+
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 !classDefinition: 'SentTransfer class' category: 'Portfolio2'!
@@ -885,6 +921,11 @@ receivedTransferValue
 !Transfer methodsFor: 'balance' stamp: 'CB 10/31/2025 21:49:57'!
 sentTransferValue
 	^ amountOfMoney negated.! !
+
+
+!Transfer methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 12:46:36'!
+value
+	^ amountOfMoney.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
