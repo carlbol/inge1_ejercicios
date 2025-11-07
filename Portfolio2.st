@@ -450,10 +450,10 @@ test0xnavigation
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 13:12:49'!
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/7/2025 12:44:06'!
 test10AccountWithNonTransferTransactionsThatHasReceivedSentTransfersProducesExpectedNetTransferReport
 
-	| accountA accountB |
+	| accountA accountB transferNet |
 	accountA := ReceptiveAccount new.
 	accountB  := ReceptiveAccount new.
 	Transfer from: accountB  to: accountA of: 50.
@@ -461,8 +461,10 @@ test10AccountWithNonTransferTransactionsThatHasReceivedSentTransfersProducesExpe
 	Deposit register: 100 on: accountA.
 	Withdraw register: 45 on: accountB.
 	
+	transferNet := AccountTransferNet on: accountA.
 	
 	self assert: accountA netTransferReport equals: 25.
+	self assert: transferNet value equals: 25.
 	
 	
 	! !
@@ -495,7 +497,7 @@ test12PortfolioWithAnAccountHasItsAccountSummaryReport
 	
 	! !
 
-!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/4/2025 20:43:10'!
+!TransferTests methodsFor: 'as yet unclassified' stamp: 'CB 11/7/2025 12:17:47'!
 test13PortfolioWithMultipleAccountsHasCombinedSummaryReports
 
 	| portfolio  accountA accountB|
@@ -512,7 +514,7 @@ test13PortfolioWithMultipleAccountsHasCombinedSummaryReports
 	portfolio add: accountA.
 	portfolio add: accountB.
 	
-	self assert: portfolio accountSummaryReport equals: accountA accountSummaryReport .
+	self assert: (portfolio accountSummaryReport includesAllOf: accountA accountSummaryReportWithoutBalance).
 	
 	
 	! !
@@ -591,6 +593,17 @@ addedTo: aPortfolio
 
 !Account methodsFor: 'transfer' stamp: 'CB 11/3/2025 20:33:26'!
 transfers: anAmountOfMoney to: transferredAccount
+
+	self subclassResponsibility! !
+
+
+!Account methodsFor: 'reports' stamp: 'CB 11/7/2025 12:38:49'!
+evaluateReportBlock: aBlockToBeEvaluatedOnCollaborators
+
+	self subclassResponsibility! !
+
+!Account methodsFor: 'reports' stamp: 'CB 11/7/2025 12:29:48'!
+generateReport: aReport
 
 	self subclassResponsibility! !
 
@@ -713,12 +726,12 @@ transfers: anAmountOfMoney to: transferredAccount
 	^Transfer from: self to: transferredAccount of: anAmountOfMoney.! !
 
 
-!Portfolio methodsFor: 'reports' stamp: 'CB 11/4/2025 19:34:46'!
+!Portfolio methodsFor: 'reports' stamp: 'CB 11/7/2025 12:14:51'!
 accountSummaryReport
 
 	| accountSummary totalBalance balanceSummary |
-	accountSummary := accounts inject: OrderedCollection new into: [:collectionOfTransactionSummaries :anAccount | 
-	collectionOfTransactionSummaries addAll: anAccount accountSummaryReportWithoutBalance ].
+	accountSummary := OrderedCollection new.
+	accounts do:[:anAccount | accountSummary addAll: anAccount accountSummaryReportWithoutBalance  ].
 
 	totalBalance := accounts sum: [:anAccount | anAccount balance] ifEmpty: [0].
 	
@@ -729,6 +742,16 @@ accountSummaryReport
 	
 		
 	! !
+
+!Portfolio methodsFor: 'reports' stamp: 'CB 11/7/2025 12:39:43'!
+evaluateReportBlock: aBlockToBeEvaluatedOnCollaborators
+
+	^ aBlockToBeEvaluatedOnCollaborators value:accounts ! !
+
+!Portfolio methodsFor: 'reports' stamp: 'CB 11/7/2025 12:30:30'!
+generateReport: aReport
+
+	^ aReport portfolioReport: self.! !
 
 !Portfolio methodsFor: 'reports' stamp: 'CB 11/4/2025 21:38:22'!
 netTransferReport
@@ -837,6 +860,17 @@ accountSummaryReport
 accountSummaryReportWithoutBalance
 
 	^ transactions collect: [:aTransaction | aTransaction transactionSummary]! !
+
+!ReceptiveAccount methodsFor: 'reports' stamp: 'CB 11/7/2025 12:40:05'!
+evaluateReportBlock: aBlockToBeEvaluatedOnCollaborators
+
+	^ aBlockToBeEvaluatedOnCollaborators value: transactions ! !
+
+!ReceptiveAccount methodsFor: 'reports' stamp: 'CB 11/7/2025 12:31:16'!
+generateReport: aReport
+
+	^ aReport receptiveAccountReport: self.
+! !
 
 !ReceptiveAccount methodsFor: 'reports' stamp: 'CB 11/4/2025 13:08:24'!
 netTransferReport
@@ -1062,6 +1096,86 @@ Withdraw class
 for: aValue
 
 	^ self new initializeFor: aValue ! !
+
+
+!classDefinition: #Report category: 'Portfolio2'!
+Object subclass: #Report
+	instanceVariableNames: 'account'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio2'!
+
+!Report methodsFor: 'generate report' stamp: 'CB 11/7/2025 12:32:32'!
+portfolioReport: aPortfolio
+
+	self subclassResponsibility! !
+
+!Report methodsFor: 'generate report' stamp: 'CB 11/7/2025 12:32:37'!
+receptiveAccountReport: aPortfolio
+
+	self subclassResponsibility! !
+
+
+!Report methodsFor: 'initialization' stamp: 'CB 11/7/2025 12:46:00'!
+on: anAccount
+	account := anAccount.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'Report class' category: 'Portfolio2'!
+Report class
+	instanceVariableNames: ''!
+
+!Report class methodsFor: 'instance creation' stamp: 'CB 11/7/2025 12:45:06'!
+on: anAccount
+
+	^ self new on: anAccount.! !
+
+
+!classDefinition: #AccountSummary category: 'Portfolio2'!
+Report subclass: #AccountSummary
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio2'!
+
+!AccountSummary methodsFor: 'evaluation' stamp: 'CB 11/7/2025 12:48:32'!
+lines
+	^ account generateReport:self.
+	! !
+
+
+!AccountSummary methodsFor: 'generate report' stamp: 'CB 11/7/2025 12:32:32'!
+portfolioReport: aPortfolio! !
+
+!AccountSummary methodsFor: 'generate report' stamp: 'CB 11/7/2025 12:32:37'!
+receptiveAccountReport: aPortfolio! !
+
+
+!classDefinition: #AccountTransferNet category: 'Portfolio2'!
+Report subclass: #AccountTransferNet
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Portfolio2'!
+
+!AccountTransferNet methodsFor: 'evaluation' stamp: 'CB 11/7/2025 12:48:16'!
+value
+	^ account generateReport:self.! !
+
+
+!AccountTransferNet methodsFor: 'generate report' stamp: 'CB 11/7/2025 12:41:39'!
+portfolioReport: aPortfolio
+
+	^ aPortfolio evaluateReportBlock: [:aCollectionOfAccounts | aCollectionOfAccounts sum: [:anAccount | anAccount netTransferReport] ifEmpty: [0]].! !
+
+!AccountTransferNet methodsFor: 'generate report' stamp: 'CB 11/7/2025 12:37:53'!
+receptiveAccountReport: aReceptiveAccount
+
+	^ aReceptiveAccount evaluateReportBlock: [:aCollectionOfTransactions | aCollectionOfTransactions sum: [:aTransaction | aTransaction transferValue]]
+
+	! !
+
 
 
 !classDefinition: #Transfer category: 'Portfolio2'!
